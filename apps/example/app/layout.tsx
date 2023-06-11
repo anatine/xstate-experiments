@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import '../styles/global.css';
 
 export const metadata = {
@@ -11,8 +13,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className="flex flex-col w-full h-screen" suppressHydrationWarning>
+        <nav className="navbar bg-base-200">
+          <div className="navbar-start px-1">
+            <div className="text-sm font-bold font-primary">Examples:</div>
+            <ul className="menu menu-horizontal">
+              <li>
+                <Link href="/toggler">Toggler</Link>
+              </li>
+              <li>
+                <Link href="/dynamic">Dynamic Actors</Link>
+              </li>
+            </ul>
+          </div>
+        </nav>
+        {children}
+      </body>
     </html>
   );
 }

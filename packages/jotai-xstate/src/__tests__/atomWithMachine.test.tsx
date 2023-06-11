@@ -63,7 +63,7 @@ describe('atomWithMachine', () => {
     const testStore = createStore();
 
     const Toggler = () => {
-      const [state, send] = useAtom(toggleMachineAtom);
+      const [{ state }, send] = useAtom(toggleMachineAtom);
       console.log(
         '🚀 ~ file: atomWithMachine.test.tsx:28 ~ Toggler ~ state:',
         state.value
@@ -132,7 +132,7 @@ describe('atomWithMachine', () => {
     const toggleMachineAtom = atomWithMachine(() => toggleMachine);
 
     const Toggler = () => {
-      const [state, send] = useAtom(toggleMachineAtom);
+      const [{ state }, send] = useAtom(toggleMachineAtom);
 
       return (
         <>

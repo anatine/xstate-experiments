@@ -1,16 +1,20 @@
 'use client';
 
-import { useAtom } from 'jotai/react';
+import { atom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai/react';
 import { assign, createMachine } from 'xstate';
 
-import { atomWithMachine } from '@anatine/jotai-xstate';
+import { atomWithActor } from '@anatine/jotai-xstate';
 
 const toggleMachine = createMachine(
   {
     id: 'toggle',
     initial: 'inactive',
     context: { counter: 0 },
-
+    types: {
+      context: {} as { counter: number },
+      events: {} as { type: 'TOGGLE' },
+    },
     states: {
       inactive: {
         entry: ({ context }) => {
@@ -55,20 +59,20 @@ const toggleMachine = createMachine(
   }
 );
 
-const toggleMachineAtom = atomWithMachine(() => toggleMachine);
+const toggleMachineAtom = atomWithActor(toggleMachine);
+
+const isActiveRef = atom((get) => {
+  const { state } = get(toggleMachineAtom);
+  return state.value === 'inactive';
+});
 
 export const Toggler = () => {
-  const [state, send] = useAtom(toggleMachineAtom);
-  console.log(
-    '🚀 ~ file: atomWithMachine.test.tsx:28 ~ Toggler ~ state:',
-    state.value
-  );
+  const isActive = useAtomValue(isActiveRef);
+  const send = useSetAtom(toggleMachineAtom);
 
   return (
     <button onClick={() => send({ type: 'TOGGLE' })} className="btn">
-      {state.value === 'inactive'
-        ? 'Click to activate'
-        : 'Active! Click to deactivate'}
+      {isActive ? 'Click to activate' : 'Active! Click to deactivate'}
     </button>
   );
 };

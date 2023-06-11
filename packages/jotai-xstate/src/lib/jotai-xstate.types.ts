@@ -1,12 +1,15 @@
 import type {
   AnyActorBehavior,
+  AnyActorRef,
   AnyStateMachine,
   AreAllImplementationsAssumedToBeProvided,
   EventObject,
   InternalMachineImplementations,
   InterpreterOptions,
   MachineContext,
+  MarkAllImplementationsAsProvided,
   StateConfig,
+  StateMachine,
 } from 'xstate';
 
 export interface MachineAtomOptions<
@@ -45,3 +48,25 @@ export type Options<TMachine extends AnyStateMachine> =
         >;
 
 export type MaybeParam<T> = T extends (v: infer V) => unknown ? V : never;
+
+export type SendEvent = Parameters<AnyActorRef['send']>[0];
+
+// Taken from https://github.com/statelyai/xstate/blob/xstate%405.0.0-beta.13/packages/xstate-react/src/createActorContext.ts
+type ToMachinesWithProvidedImplementations<TMachine extends AnyStateMachine> =
+  TMachine extends StateMachine<
+    infer TContext,
+    infer TEvent,
+    infer TAction,
+    infer TActorMap,
+    infer TResolvedTypesMeta
+  >
+    ? StateMachine<
+        TContext,
+        TEvent,
+        TAction,
+        TActorMap,
+        AreAllImplementationsAssumedToBeProvided<TResolvedTypesMeta> extends false
+          ? MarkAllImplementationsAsProvided<TResolvedTypesMeta>
+          : TResolvedTypesMeta
+      >
+    : never;

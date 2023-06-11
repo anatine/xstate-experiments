@@ -10,7 +10,8 @@ import type {
 } from 'xstate';
 import { interpret } from 'xstate';
 
-import type { MaybeParam, Options } from './jotai-xstate.types';
+import { createEmptyActor } from './empty-actor';
+import type { MaybeParam, Options, SendEvent } from './jotai-xstate.types';
 
 export const RESTART = Symbol();
 
@@ -21,7 +22,7 @@ export function atomWithMachine<
   getMachine: TMachine | ((get: Getter) => TMachine),
   getOptions?: Options<TMachine> | ((get: Getter) => Options<TMachine>)
 ): WritableAtom<
-  StateFrom<TMachine>,
+  { state: StateFrom<TMachine>; actorRef: AnyActorRef },
   // [MaybeParam<Prop<TInterpreter, 'send'>> | typeof RESTART],
   [MaybeParam<Prop<TInterpreter, 'send'>> | typeof RESTART],
   void
@@ -131,9 +132,18 @@ export function atomWithMachine<
     };
   };
 
+  const emptyActor = createEmptyActor();
   const machineStateWithServiceAtom = atom(
-    (get) => get(machineStateAtom),
-    (get, set, event: Parameters<AnyActorRef['send']>[0] | typeof RESTART) => {
+    (get) => {
+      const { service } = get(machineAtom);
+      console.log('🚀 ~ file: atom-with-machine.ts:138 ~ service:', service);
+
+      return {
+        state: get(machineStateAtom),
+        actorRef: emptyActor,
+      };
+    },
+    (get, set, event: SendEvent | typeof RESTART) => {
       const { service } = get(machineAtom);
       if (event === RESTART) {
         service.stop();
@@ -145,6 +155,7 @@ export function atomWithMachine<
         });
         newService.start();
       } else {
+        console.log('🚀 ~ file: atom-with-machine.ts:164 ~ event:', event);
         service.send(event);
       }
     }
