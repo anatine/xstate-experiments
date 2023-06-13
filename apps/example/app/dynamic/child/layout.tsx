@@ -9,17 +9,11 @@ import { EventFromBehavior } from 'xstate';
 import { childMachineAtom } from '../../../state/child-machine';
 
 const childStateValue = atom((get) => get(childMachineAtom).state.value);
-const childSendAtom = atom(
-  null,
-  (get, set, action: { type: string; [key: string]: unknown }) => {
-    const send = get(childMachineAtom).actorRef.send;
-    send(action);
-  }
-);
 
 export default function Layout({ children }: PropsWithChildren) {
   const childValue = useAtomValue(childStateValue);
-  const sendChild = useSetAtom(childSendAtom);
+  console.log('🚀 ~ file: layout.tsx:15 ~ Layout ~ childValue:', childValue);
+  const sendChild = useSetAtom(childMachineAtom);
 
   useEffect(() => {
     if (childValue !== 'IDLE') return;

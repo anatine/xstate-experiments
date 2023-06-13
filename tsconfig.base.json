@@ -15,7 +15,10 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@anatine/jotai-xstate": ["packages/jotai-xstate/src/index.ts"]
+      "@anatine/jotai-xstate": ["packages/jotai-xstate/src/index.ts"],
+      "@anatine/xstate-spawn-machine": [
+        "packages/xstate-spawn-machine/src/index.ts"
+      ]
     }
   },
   "exclude": ["node_modules", "tmp"]

@@ -1,0 +1,44 @@
+{
+  "name": "xstate-spawn-machine",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/xstate-spawn-machine/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/xstate-spawn-machine",
+        "main": "packages/xstate-spawn-machine/src/index.ts",
+        "tsConfig": "packages/xstate-spawn-machine/tsconfig.lib.json",
+        "assets": ["packages/xstate-spawn-machine/*.md"]
+      }
+    },
+    "publish": {
+      "command": "node tools/scripts/publish.mjs xstate-spawn-machine {args.ver} {args.tag}",
+      "dependsOn": ["build"]
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["packages/xstate-spawn-machine/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "packages/xstate-spawn-machine/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    }
+  },
+  "tags": []
+}

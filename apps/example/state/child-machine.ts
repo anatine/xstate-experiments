@@ -1,7 +1,7 @@
 import { atom } from 'jotai';
 import { createMachine } from 'xstate';
 
-import { spawnedActorFamily } from '@anatine/jotai-xstate';
+import { atomWithSpawnedActor } from '@anatine/jotai-xstate';
 import { appMachineAtom } from './app-machine';
 
 export const childMachine = createMachine({
@@ -25,11 +25,8 @@ export const childMachine = createMachine({
   },
 });
 
-export const childMachineCacheAtom = atom((get) => {
-  const ID = 'childMachine';
-  const { actorRef: parentRef } = get(appMachineAtom);
-  console.log(`Spawn childMachine ${ID}`);
-  return spawnedActorFamily({ actor: childMachine, parent: parentRef, id: ID });
-});
-
-export const childMachineAtom = atom((get) => get(get(childMachineCacheAtom)));
+export const childMachineAtom = atomWithSpawnedActor(
+  childMachine,
+  appMachineAtom,
+  { id: 'childMachine' }
+);

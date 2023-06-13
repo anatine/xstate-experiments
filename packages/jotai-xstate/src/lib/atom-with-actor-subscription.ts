@@ -1,27 +1,23 @@
 import { atom, type Getter } from 'jotai';
-import { atomFamily } from 'jotai/utils';
 import {
-  createMachine,
-  interpret,
-  InterpreterStatus,
-  type AnyActorRef,
+  type ActorRefFrom,
   type AnyStateMachine,
   type EventFromBehavior,
   type Interpreter,
-  type InterpreterOptions,
   type SnapshotFrom,
 } from 'xstate';
 
 import { isGetter } from './utils';
 
-export function atomWithActor<TMachine extends AnyStateMachine>(
-  getMachine: TMachine | ((get: Getter) => TMachine),
-  getOptions?:
-    | Partial<InterpreterOptions<TMachine>>
-    | ((get: Getter) => Partial<InterpreterOptions<TMachine>>)
+export function atomWithActorSubscription<
+  TMachine extends AnyStateMachine = AnyStateMachine,
+  Parent extends ActorRefFrom<AnyStateMachine> = ActorRefFrom<AnyStateMachine>
+>(
+  systemId: string | ((get: Getter) => string),
+  getMachine: Parent | ((get: Getter) => Parent)
 ) {
-  const interpretedMachineAtom = atom<null | {
-    machine: TMachine;
+  const providedMachineAtom = atom<null | {
+    machine: Parent;
     actor: Interpreter<TMachine, EventFromBehavior<TMachine>>;
   }>(null);
 
@@ -32,7 +28,7 @@ export function atomWithActor<TMachine extends AnyStateMachine>(
 
   const machineOperatorAtom = atom(
     (get) => {
-      const interpretedMachine = get(interpretedMachineAtom);
+      const interpretedMachine = get(providedMachineAtom);
       if (interpretedMachine) return interpretedMachine;
 
       let initializing = true;
@@ -42,28 +38,24 @@ export function atomWithActor<TMachine extends AnyStateMachine>(
         }
         throw new Error('get not allowed after initialization');
       };
+      const id = isGetter(systemId) ? systemId(safeGet) : systemId;
       const machine = isGetter(getMachine) ? getMachine(safeGet) : getMachine;
-      const options = isGetter(getOptions) ? getOptions(safeGet) : getOptions;
-      if (options?.systemId && options?.parent && options.parent.system) {
-        const existingActor = options.parent.system?.get(options.systemId);
-        if (existingActor) {
-          return {
-            machine,
-            actor: existingActor as Interpreter<
-              TMachine,
-              EventFromBehavior<TMachine>
-            >,
-          };
-        }
+
+      const foundActor = machine.system?.get(id);
+      if (!foundActor) {
+        throw new Error(`No actor found with id ${id}`);
       }
 
-      const actor = interpret(machine, options);
       initializing = false;
-      return { machine, actor };
+
+      return {
+        machine,
+        actor: foundActor as Interpreter<TMachine, EventFromBehavior<TMachine>>,
+      };
     },
     (get, set) => {
-      if (get(interpretedMachineAtom) === null) return;
-      set(interpretedMachineAtom, get(machineOperatorAtom));
+      if (get(providedMachineAtom) === null) return;
+      set(providedMachineAtom, get(machineOperatorAtom));
     }
   );
   machineOperatorAtom.onMount = (commit) => {
@@ -77,15 +69,8 @@ export function atomWithActor<TMachine extends AnyStateMachine>(
       const subscription = actor.subscribe((nextState) => {
         set(cachedMachineStateAtom, nextState);
       });
-      actor.start();
       registerCleanup(() => {
-        const { actor } = get(machineOperatorAtom);
         subscription.unsubscribe();
-        if (!actor._parent) {
-          actor.stop();
-          actor.status = InterpreterStatus.NotStarted;
-          (actor as any)._initState();
-        }
       });
     }
   );
@@ -130,13 +115,3 @@ export function atomWithActor<TMachine extends AnyStateMachine>(
 
   return actorStateAtom;
 }
-
-/**
- * 
-: WritableAtom<
-  // Interpreter<TMachine, EventFromBehavior<TMachine>>,
-  SnapshotFrom<TMachine>,
-  EventFromBehavior<TMachine> | AnyActorBehavior,
-  void
->
- */
